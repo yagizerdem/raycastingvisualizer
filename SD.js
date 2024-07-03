@@ -33,4 +33,6 @@ const OFFSETX = window.innerWidth / 2 - WIDTH / 2;
 const OFFSETY = window.innerHeight / 2 - HEIGHT / 2;
 const FOV = Math.PI / 3;
 const HALFFOV = FOV / 2;
-const PRECISION = 64;
+const PRECISION = 1;
+const ALLENEMY = [];
+let MONSTERIMAGE;

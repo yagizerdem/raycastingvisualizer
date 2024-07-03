@@ -1,5 +1,7 @@
 const PLAYER = new Player({ x: 50, y: 50 });
 
+ALLENEMY.push(new Enemy({ x: 100, y: 50 }));
+
 window.onload = () => {
   CANVAS = document.getElementById("canvas");
   CONTEXT = CANVAS.getContext("2d");
@@ -41,13 +43,14 @@ window.onload = () => {
         break;
     }
   };
-
+  MONSTERIMAGE = document.getElementById("texture");
   loop = setInterval(main, 1000 / fps);
 };
 
 function main() {
-  draw();
   update();
+  draw();
+  clearFix();
 }
 
 function renderMap2d() {
@@ -74,7 +77,21 @@ function draw() {
 
   renderMap2d();
 
+  rayCast();
   PLAYER.draw();
+  // palyer direction vector
+  PLAYER.drawDirectionVector();
+
+  for (var enemy of ALLENEMY) {
+    enemy.draw();
+
+    CONTEXT.lineWidth = 2;
+    CONTEXT.strokeStyle = "red";
+    CONTEXT.beginPath();
+    CONTEXT.moveTo(enemy.x, enemy.y); // Move to the starting point
+    CONTEXT.lineTo(PLAYER.x, PLAYER.y); // Draw a line to the ending point
+    CONTEXT.stroke();
+  }
 
   printFps();
 }
@@ -101,7 +118,10 @@ function update() {
     PLAYER.isSliding = false;
     PLAYER.move();
   }
-  rayCast();
+
+  for (let enemy of ALLENEMY) {
+    enemy.move();
+  }
 }
 
 function calcFps() {
@@ -135,22 +155,27 @@ function rayCast() {
 
     let rayCos = Math.cos(rayAngle) / PRECISION;
     let raySin = Math.sin(rayAngle) / PRECISION;
-    let wall = 0;
-    while (wall == 0) {
+    let target = 0;
+    while (target == 0) {
       ray.x += rayCos;
       ray.y += raySin;
-      wall = MAP[Math.floor(ray.y / WALLSIZE)][Math.floor(ray.x / WALLSIZE)];
+      // walls
+      target = MAP[Math.floor(ray.y / WALLSIZE)][Math.floor(ray.x / WALLSIZE)];
+      // enemy
+      for (let enemy of ALLENEMY) {
+        const diff = Math.hypot(ray.x - enemy.x, ray.y - enemy.y);
+        if (diff <= enemy.radius) target = enemy;
+      }
     }
-    const distance = Math.sqrt(
+    let distance = Math.sqrt(
       Math.pow(PLAYER.x - ray.x, 2) + Math.pow(PLAYER.y - ray.y, 2)
     );
+    distance = distance * Math.cos(rayAngle - PLAYER.angle);
     // console.log(distance);
     rayAngle += FOV / WIDTH;
 
     // draw rays
     drawLine(PLAYER.x, PLAYER.y, ray.x, ray.y, "blue");
-    // palyer direction vector
-    PLAYER.drawDirectionVector();
 
     let wallHeight = Math.floor(HEIGHT / 2 / distance) + 50;
     // draw outside
@@ -162,13 +187,37 @@ function rayCast() {
       "cyan"
     );
     // draw walls
-    drawLine(
-      i + OFFSETX,
-      HEIGHT / 2 - wallHeight + OFFSETY,
-      i + OFFSETX,
-      HEIGHT / 2 + wallHeight + OFFSETY,
-      "red"
-    );
+    if (target == 1) {
+      drawLine(
+        i + OFFSETX,
+        HEIGHT / 2 - wallHeight + OFFSETY,
+        i + OFFSETX,
+        HEIGHT / 2 + wallHeight + OFFSETY,
+        "red"
+      );
+    }
+
+    if (target instanceof Enemy && !target.istracking) {
+      target.istracking = true;
+      target.startx = OFFSETX + i;
+      target.starty = HEIGHT / 2 - wallHeight + OFFSETY;
+      target.height = 2 * wallHeight;
+      target.imageDraw = true;
+      // target.imageDraw = true;
+      // const x = ;
+
+      // CONTEXT.drawImage(
+      //   MONSTERIMAGE,
+      //   x,
+      //   HEIGHT / 2 - wallHeight + OFFSETY,
+      //   wallHeight,
+      //   height
+      // );
+    }
+    if (target instanceof Enemy && target.istracking) {
+      target.width++;
+    }
+
     // draw floor
     drawLine(
       i + OFFSETX,
@@ -185,4 +234,20 @@ function drawLine(x1, y1, x2, y2, cssColor) {
   CONTEXT.moveTo(x1, y1);
   CONTEXT.lineTo(x2, y2);
   CONTEXT.stroke();
+}
+function clearFix() {
+  for (var e of ALLENEMY) {
+    if (e.imageDraw) {
+      CONTEXT.drawImage(MONSTERIMAGE, e.startx, e.starty, e.width, e.height);
+    }
+  }
+  for (var enemy of ALLENEMY) {
+    enemy.istracking = false;
+    enemy.imageDraw = false;
+    enemy.width = 0;
+    enemy.height = 0;
+    enemy.startx = 0;
+    enemy.starty = 0;
+  }
+  // draw eney
 }

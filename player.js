@@ -1,5 +1,6 @@
 class Player {
-  static baseSpeed = WALLSIZE / 360 / 3;
+  static baseSpeed = (WALLSIZE / 360 / 3) * 10;
+  static baseRadius = 10;
   constructor({ x, y }) {
     if (!Player.instance) {
       Player.instance = this;
@@ -19,11 +20,12 @@ class Player {
     this.speed = Player.baseSpeed;
     this.spinDirection = 0;
     this.isSliding = false;
+    this.radius = Player.baseRadius;
   }
   draw() {
     CONTEXT.fillStyle = "blue";
     CONTEXT.beginPath();
-    CONTEXT.arc(this.x, this.y, 10, 0, 2 * Math.PI); // Arc parameters (x, y, radius, startAngle, endAngle)
+    CONTEXT.arc(this.x, this.y, this.radius, 0, 2 * Math.PI); // Arc parameters (x, y, radius, startAngle, endAngle)
     CONTEXT.fill();
     CONTEXT.closePath();
   }
